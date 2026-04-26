@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# ASCII Camera Vision 📸
 
-## Getting Started
+A high-performance, real-time web application that converts your live webcam feed into dynamic ASCII art. 
 
-First, run the development server:
+![ASCII Camera Preview](./public/preview.png) *(Note: Add a screenshot of your app here)*
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Real-Time Processing**: Instantaneous webcam-to-ASCII conversion using optimized Canvas API manipulation.
+- **Multiple Character Sets**: 
+  - Simple Gradient (` .:-=+*#%@`)
+  - Complex Detailed (` .'\`^\\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$`)
+  - Binary (`01`)
+  - ASCII Blocks (` ░▒▓█`)
+- **Customizable Image Controls**:
+  - **Font Size**: Change the resolution of the ASCII grid on the fly.
+  - **Gain (Noise)**: Add stylized visual noise and brightness.
+  - **Intensity**: Adjust the luminance power curve for sharper mapping.
+  - **Contrast**: Deepen shadows and pop highlights.
+- **Color Modes**:
+  - **Matrix Green**: The classic terminal hacker look.
+  - **Original Colors**: Retain your webcam's natural colors.
+  - **Grayscale**: A classic monochromatic style.
+- **Premium Glassmorphism UI**: A sleek, modern floating control panel.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## 🚀 Getting Started
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project is designed to be as accessible as possible. You can run it in two different ways depending on your needs.
 
-## Learn More
+### Option 1: The Quick Way (Standalone HTML)
+You don't need Node.js, NPM, or any server to run this project.
+1. Download or clone this repository.
+2. Open the `index.html` file directly in any modern web browser (Chrome, Firefox, Safari, Edge).
+3. Allow camera permissions when prompted.
+4. Enjoy!
 
-To learn more about Next.js, take a look at the following resources:
+### Option 2: The Next.js Way (For Development)
+If you wish to modify the React source code and build upon the Next.js framework:
+1. Ensure you have [Node.js](https://nodejs.org/) installed.
+2. Clone the repository and navigate to the project directory:
+   ```bash
+   git clone <your-repo-url>
+   cd "ASCII art"
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🛠️ Built With
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Vanilla HTML/CSS/JS** (Standalone version)
+- **React.js 19**
+- **Next.js 16**
+- **HTML5 Canvas API**
+- **WebRTC (getUserMedia API)** for camera access
 
-## Deploy on Vercel
+## 🔒 Privacy
+This application runs **100% locally** in your browser. No video data, images, or personal information is ever recorded, saved, or sent to any server.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📄 License
+This project is open-source and available under the MIT License. Feel free to fork, modify, and use it in your own projects!

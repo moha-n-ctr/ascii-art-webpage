@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASCII Camera Vision</title>
+  <style>
+    :root {
+      --background: #0f0c29;
+      --text-primary: #ffffff;
+      --text-secondary: #a0aec0;
+      --accent: #00ff88;
+      --accent-hover: #00cc6a;
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+    }
+
+    * { box-sizing: border-box; padding: 0; margin: 0; }
+
+    html, body {
+      max-width: 100vw;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .glass-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 320px;
+      padding: 24px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: transparent;
+      margin: 10px 0;
+    }
+    input[type=range]:focus { outline: none; }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 6px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      -webkit-appearance: none;
+      margin-top: -5px;
+      box-shadow: 0 0 10px var(--accent);
+      transition: transform 0.2s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    select {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: 1px solid var(--glass-border);
+      outline: none;
+      font-family: inherit;
+      margin-top: 4px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      appearance: none;
+    }
+    select:focus { border-color: var(--accent); }
+
+    .btn-start {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .btn-start:hover { transform: scale(1.02); }
+    .btn-stop {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    
+    #cameraError {
+      color: #ff4444;
+      font-size: 0.9rem;
+      display: none;
+    }
+    
+    #controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <video id="video" style="display: none;" playsinline muted></video>
+  <canvas id="offscreenCanvas" style="display: none;"></canvas>
+  
+  <canvas id="outputCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;"></canvas>
+
+  <div class="glass-panel">
+    <h1 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+      ASCII Camera Vision
+    </h1>
+    
+    <div id="cameraError"></div>
+
+    <button id="cameraBtn" class="btn-start">Start Camera</button>
+
+    <div id="controls">
+      <div>
+        <label>Font Size <span id="fontSizeVal">12px</span></label>
+        <input type="range" id="fontSize" min="6" max="32" step="1" value="12" />
+      </div>
+
+      <div>
+        <label>Gain (Noise) <span id="gainVal">1.0x</span></label>
+        <input type="range" id="gain" min="0.5" max="5.0" step="0.1" value="1.0" />
+      </div>
+
+      <div>
+        <label>Intensity <span id="intensityVal">1.00x</span></label>
+        <input type="range" id="intensity" min="0.1" max="3.0" step="0.05" value="1.0" />
+      </div>
+
+      <div>
+        <label>Contrast <span id="contrastVal">0</span></label>
+        <input type="range" id="contrast" min="-100" max="100" step="1" value="0" />
+      </div>
+
+      <div>
+        <label>Color Mode</label>
+        <select id="colorMode">
+          <option value="matrix">Matrix Green</option>
+          <option value="color">Original Colors</option>
+          <option value="grayscale">Grayscale</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Character Set</label>
+        <select id="charSetKey">
+          <option value="simple">Simple Gradient</option>
+          <option value="complex">Complex Detailed</option>
+          <option value="binary">Binary (01)</option>
+          <option value="blocks">ASCII Blocks</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CHAR_SETS = {
+      simple: " .:-=+*#%@",
+      complex: " .'`^\\",:;Il!i><~+_-?][}{1)(|\\\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$",
+      binary: " 01",
+      blocks: "  ░▒▓█"
+    };
+
+    const video = document.getElementById('video');
+    const offscreenCanvas = document.getElementById('offscreenCanvas');
+    const outputCanvas = document.getElementById('outputCanvas');
+    const cameraBtn = document.getElementById('cameraBtn');
+    const cameraError = document.getElementById('cameraError');
+    
+    const oCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+    const outCtx = outputCanvas.getContext('2d');
+
+    // Controls
+    const inputs = {
+      fontSize: document.getElementById('fontSize'),
+      gain: document.getElementById('gain'),
+      intensity: document.getElementById('intensity'),
+      contrast: document.getElementById('contrast'),
+      colorMode: document.getElementById('colorMode'),
+      charSetKey: document.getElementById('charSetKey')
+    };
+
+    const vals = {
+      fontSize: document.getElementById('fontSizeVal'),
+      gain: document.getElementById('gainVal'),
+      intensity: document.getElementById('intensityVal'),
+      contrast: document.getElementById('contrastVal')
+    };
+
+    let cameraActive = false;
+    let requestRef = null;
+
+    // State bindings
+    inputs.fontSize.addEventListener('input', (e) => vals.fontSize.textContent = e.target.value + 'px');
+    inputs.gain.addEventListener('input', (e) => vals.gain.textContent = parseFloat(e.target.value).toFixed(1) + 'x');
+    inputs.intensity.addEventListener('input', (e) => vals.intensity.textContent = parseFloat(e.target.value).toFixed(2) + 'x');
+    inputs.contrast.addEventListener('input', (e) => vals.contrast.textContent = e.target.value);
+
+    cameraBtn.addEventListener('click', () => {
+      if (cameraActive) stopCamera();
+      else startCamera();
+    });
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } 
+        });
+        video.srcObject = stream;
+        video.play();
+        cameraActive = true;
+        cameraError.style.display = 'none';
+        cameraBtn.textContent = 'Stop Camera';
+        cameraBtn.className = 'btn-stop';
+        processFrame();
+      } catch (err) {
+        console.error("Camera error:", err);
+        cameraError.textContent = "Unable to access camera. Please allow permissions.";
+        cameraError.style.display = 'block';
+      }
+    }
+
+    function stopCamera() {
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+      }
+      cameraActive = false;
+      cameraBtn.textContent = 'Start Camera';
+      cameraBtn.className = 'btn-start';
+      if (requestRef) cancelAnimationFrame(requestRef);
+    }
+
+    function applyContrast(value, contrast) {
+      const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+      return factor * (value - 128) + 128;
+    }
+
+    const clamp = (val) => Math.max(0, Math.min(255, val));
+
+    function processFrame() {
+      if (!cameraActive) return;
+      if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+        requestRef = requestAnimationFrame(processFrame);
+        return;
+      }
+
+      // Settings
+      const fontSize = parseFloat(inputs.fontSize.value);
+      const gain = parseFloat(inputs.gain.value);
+      const intensity = parseFloat(inputs.intensity.value);
+      const contrast = parseFloat(inputs.contrast.value);
+      const colorMode = inputs.colorMode.value;
+      const charSetKey = inputs.charSetKey.value;
+
+      const ww = window.innerWidth;
+      const wh = window.innerHeight;
+      
+      if (outputCanvas.width !== ww || outputCanvas.height !== wh) {
+        outputCanvas.width = ww;
+        outputCanvas.height = wh;
+      }
+
+      const cellWidth = fontSize * 0.6; 
+      const cellHeight = fontSize;
+      
+      const vW = video.videoWidth;
+      const vH = video.videoHeight;
+      const vRatio = vW / vH;
+      const screenRatio = ww / wh;
+
+      let drawW, drawH;
+      if (screenRatio > vRatio) {
+        drawW = ww;
+        drawH = ww / vRatio;
+      } else {
+        drawW = wh * vRatio;
+        drawH = wh;
+      }
+      
+      const cols = Math.floor(ww / cellWidth);
+      const rows = Math.floor(wh / cellHeight);
+
+      if (offscreenCanvas.width !== cols || offscreenCanvas.height !== rows) {
+        offscreenCanvas.width = cols;
+        offscreenCanvas.height = rows;
+      }
+
+      const sx = (vW - (vW * (ww / drawW))) / 2;
+      const sy = (vH - (vH * (wh / drawH))) / 2;
+      const sw = vW * (ww / drawW);
+      const sh = vH * (wh / drawH);
+
+      oCtx.drawImage(video, sx, sy, sw, sh, 0, 0, cols, rows);
+      
+      const imageData = oCtx.getImageData(0, 0, cols, rows);
+      const data = imageData.data;
+
+      outCtx.fillStyle = "#000000";
+      outCtx.fillRect(0, 0, ww, wh);
+      outCtx.font = `bold ${fontSize}px monospace`;
+      outCtx.textAlign = "center";
+      outCtx.textBaseline = "middle";
+
+      const chars = CHAR_SETS[charSetKey];
+      const charLen = chars.length;
+
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const offset = (y * cols + x) * 4;
+          let r = data[offset];
+          let g = data[offset + 1];
+          let b = data[offset + 2];
+
+          if (gain !== 1) {
+            const noise = (Math.random() - 0.5) * 50 * (gain - 1);
+            r = clamp(r * gain + noise);
+            g = clamp(g * gain + noise);
+            b = clamp(b * gain + noise);
+          }
+
+          if (contrast !== 0) {
+            r = clamp(applyContrast(r, contrast));
+            g = clamp(applyContrast(g, contrast));
+            b = clamp(applyContrast(b, contrast));
+          }
+
+          let brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+          brightness = 255 * Math.pow(brightness / 255, intensity);
+
+          const charIdx = Math.floor((brightness / 255) * (charLen - 1));
+          const char = chars[charIdx];
+
+          if (char === " ") continue;
+
+          const px = x * cellWidth + cellWidth / 2;
+          const py = y * cellHeight + cellHeight / 2;
+
+          if (colorMode === "matrix") {
+            const brightnessFactor = brightness / 255;
+            const rCol = Math.floor(0);
+            const gCol = Math.floor(100 + brightnessFactor * 155);
+            const bCol = Math.floor(0);
+            outCtx.fillStyle = `rgb(${rCol}, ${gCol}, ${bCol})`;
+          } else if (colorMode === "color") {
+            outCtx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+          } else {
+            outCtx.fillStyle = `rgb(${brightness}, ${brightness}, ${brightness})`;
+          }
+
+          outCtx.fillText(char, px, py);
+        }
+      }
+
+      requestRef = requestAnimationFrame(processFrame);
+    }
+  </script>
+</body>
+</html>
